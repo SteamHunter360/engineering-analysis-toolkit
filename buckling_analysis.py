@@ -5,9 +5,9 @@ import os
 os.makedirs("images", exist_ok=True)
 
 # Column/material properties
-E = 200e9          # Young's modulus, Pa
-I = 8e-6           # Second moment of area, m^4
-L = 2.0            # Column length, m
+E = float(input("Enter Young's modulus E (Pa): "))
+I = float(input("Enter second moment of area I (m^4): "))
+L = float(input("Enter column length L (m): "))
 
 # Effective length factors
 end_conditions = {
