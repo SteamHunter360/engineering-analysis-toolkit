@@ -5,9 +5,9 @@ import os
 os.makedirs("images", exist_ok=True)
 
 # Stress state (MPa)
-sigma_x = 80
-sigma_y = 20
-tau_xy = 30
+sigma_x = float(input("Enter normal stress σx (MPa): "))
+sigma_y = float(input("Enter normal stress σy (MPa): "))
+tau_xy = float(input("Enter shear stress τxy (MPa): "))
 
 # Centre and radius
 centre = (sigma_x + sigma_y) / 2
