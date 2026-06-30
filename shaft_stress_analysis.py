@@ -5,8 +5,8 @@ import os
 os.makedirs("images", exist_ok=True)
 
 # Shaft properties
-diameter = 0.05          # metres
-torque = 500             # N·m
+diameter = float(input("Enter shaft diameter (m): "))
+torque = float(input("Enter applied torque (N·m): "))
 
 # Radius values
 r = np.linspace(0, diameter / 2, 200)
