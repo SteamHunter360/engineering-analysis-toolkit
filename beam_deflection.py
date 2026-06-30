@@ -5,11 +5,10 @@ import os
 os.makedirs("images", exist_ok=True)
 
 # Beam properties
-L = 2.0      # metres
-P = 1000     # Newtons
-E = 200e9    # Pa
-I = 8e-6     # m^4
-
+L = float(input("Enter beam length L (m): "))
+P = float(input("Enter centre point load P (N): "))
+E = float(input("Enter Young's modulus E (Pa): "))
+I = float(input("Enter second moment of area I (m^4): "))
 x = np.linspace(0, L, 200)
 
 # Simply supported beam with centre point load
