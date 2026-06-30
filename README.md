@@ -8,6 +8,7 @@ The purpose of this project is to build practical engineering software for struc
 
 - Beam Deflection Analysis
 - Shaft Stress Analysis
+- Mohr's Circle
 
 ## Technologies
 
@@ -18,7 +19,6 @@ The purpose of this project is to build practical engineering software for struc
 ## Future Modules
 
 - Buckling Analysis
-- Mohr's Circle
 - Torsion Analysis
 - Pressure Vessel Analysis
 - Fatigue Analysis
