@@ -1,47 +1,63 @@
 import numpy as np
-import matplotlib.pyplot as plt
-import os
 
-os.makedirs("images", exist_ok=True)
+from src.validation import validate_positive_number
 
-# Column/material properties
-E = float(input("Enter Young's modulus E (Pa): "))
-I = float(input("Enter second moment of area I (m^4): "))
-L = float(input("Enter column length L (m): "))
 
-# Effective length factors
-end_conditions = {
+END_CONDITION_FACTORS = {
     "Pinned-Pinned": 1.0,
     "Fixed-Free": 2.0,
     "Fixed-Pinned": 0.7,
-    "Fixed-Fixed": 0.5
+    "Fixed-Fixed": 0.5,
 }
 
-critical_loads = {}
 
-for condition, K in end_conditions.items():
-    P_cr = (np.pi**2 * E * I) / ((K * L) ** 2)
-    critical_loads[condition] = P_cr
+def calculate_euler_buckling_load(
+    youngs_modulus,
+    second_moment_area,
+    column_length,
+    effective_length_factor=1.0,
+):
+    validate_positive_number(
+        youngs_modulus,
+        "youngs_modulus",
+    )
+    validate_positive_number(
+        second_moment_area,
+        "second_moment_area",
+    )
+    validate_positive_number(
+        column_length,
+        "column_length",
+    )
+    validate_positive_number(
+        effective_length_factor,
+        "effective_length_factor",
+    )
 
-print("\nEuler Buckling Critical Loads:\n")
+    effective_length = (
+        effective_length_factor * column_length
+    )
 
-for condition, load in critical_loads.items():
-    print(f"{condition}: {load / 1000:.2f} kN")
+    return (
+        np.pi**2
+        * youngs_modulus
+        * second_moment_area
+        / effective_length**2
+    )
 
-# Plot
-plt.figure(figsize=(8, 5))
 
-plt.bar(
-    critical_loads.keys(),
-    [load / 1000 for load in critical_loads.values()]
-)
-
-plt.title("Euler Buckling Critical Load by End Condition")
-plt.xlabel("End Condition")
-plt.ylabel("Critical Load (kN)")
-plt.grid(axis="y")
-
-plt.tight_layout()
-plt.savefig("images/buckling_analysis.png", dpi=300)
-
-plt.show()
+def compare_end_conditions(
+    youngs_modulus,
+    second_moment_area,
+    column_length,
+):
+    return {
+        condition: calculate_euler_buckling_load(
+            youngs_modulus=youngs_modulus,
+            second_moment_area=second_moment_area,
+            column_length=column_length,
+            effective_length_factor=factor,
+        )
+        for condition, factor
+        in END_CONDITION_FACTORS.items()
+    }

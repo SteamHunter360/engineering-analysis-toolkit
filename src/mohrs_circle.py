@@ -1,68 +1,139 @@
 import numpy as np
-import matplotlib.pyplot as plt
-import os
 
-os.makedirs("images", exist_ok=True)
+from src.validation import validate_real_number
 
-# Stress state (MPa)
-sigma_x = float(input("Enter normal stress σx (MPa): "))
-sigma_y = float(input("Enter normal stress σy (MPa): "))
-tau_xy = float(input("Enter shear stress τxy (MPa): "))
 
-# Centre and radius
-centre = (sigma_x + sigma_y) / 2
+def calculate_mohrs_circle_parameters(
+    sigma_x,
+    sigma_y,
+    tau_xy,
+):
+    """
+    Calculate the key parameters of Mohr's circle for plane stress.
 
-radius = np.sqrt(
-    ((sigma_x - sigma_y) / 2) ** 2
-    + tau_xy ** 2
-)
+    Parameters
+    ----------
+    sigma_x : float
+        Normal stress in the x-direction.
 
-theta = np.linspace(
-    0,
-    2 * np.pi,
-    300
-)
+    sigma_y : float
+        Normal stress in the y-direction.
 
-sigma = centre + radius * np.cos(theta)
-tau = radius * np.sin(theta)
+    tau_xy : float
+        In-plane shear stress.
 
-plt.figure(figsize=(6,6))
+    Returns
+    -------
+    dict
+        Mohr's circle centre, radius, principal stresses,
+        maximum in-plane shear stress and principal angle.
+    """
+    validate_real_number(
+        sigma_x,
+        "sigma_x",
+    )
+    validate_real_number(
+        sigma_y,
+        "sigma_y",
+    )
+    validate_real_number(
+        tau_xy,
+        "tau_xy",
+    )
 
-plt.plot(sigma, tau, linewidth=2)
+    centre = (
+        sigma_x
+        + sigma_y
+    ) / 2.0
 
-plt.scatter(
-    [sigma_x, sigma_y],
-    [tau_xy, -tau_xy],
-    label="Original Stress State"
-)
+    radius = np.sqrt(
+        (
+            (
+                sigma_x
+                - sigma_y
+            ) / 2.0
+        ) ** 2
+        + tau_xy**2
+    )
 
-plt.scatter(
-    [centre + radius, centre - radius],
-    [0,0],
-    label="Principal Stresses"
-)
+    principal_stress_1 = centre + radius
+    principal_stress_2 = centre - radius
 
-plt.axhline(0, color="black")
-plt.axvline(0, color="black")
+    principal_angle_radians = 0.5 * np.arctan2(
+        2.0 * tau_xy,
+        sigma_x - sigma_y,
+    )
 
-plt.grid(True)
+    principal_angle_degrees = np.degrees(
+        principal_angle_radians
+    )
 
-plt.axis("equal")
+    return {
+        "centre": float(centre),
+        "radius": float(radius),
+        "principal_stress_1": float(
+            principal_stress_1
+        ),
+        "principal_stress_2": float(
+            principal_stress_2
+        ),
+        "maximum_shear_stress": float(radius),
+        "principal_angle_degrees": float(
+            principal_angle_degrees
+        ),
+    }
 
-plt.title("Mohr's Circle")
 
-plt.xlabel("Normal Stress (MPa)")
-plt.ylabel("Shear Stress (MPa)")
+def generate_mohrs_circle_points(
+    sigma_x,
+    sigma_y,
+    tau_xy,
+    number_of_points=300,
+):
+    """
+    Generate normal and shear-stress coordinates for Mohr's circle.
 
-plt.legend()
+    Returns
+    -------
+    tuple
+        Normal-stress coordinates, shear-stress coordinates,
+        and calculated circle parameters.
+    """
+    if not isinstance(number_of_points, int):
+        raise TypeError(
+            "number_of_points must be an integer."
+        )
 
-plt.savefig(
-    "images/mohrs_circle.png",
-    dpi=300
-)
+    if number_of_points < 3:
+        raise ValueError(
+            "number_of_points must be at least 3."
+        )
 
-print(f"Principal Stress 1 = {centre + radius:.2f} MPa")
-print(f"Principal Stress 2 = {centre - radius:.2f} MPa")
-print(f"Maximum Shear Stress = {radius:.2f} MPa")
+    parameters = calculate_mohrs_circle_parameters(
+        sigma_x,
+        sigma_y,
+        tau_xy,
+    )
 
-plt.show()
+    theta = np.linspace(
+        0.0,
+        2.0 * np.pi,
+        number_of_points,
+    )
+
+    normal_stress_values = (
+        parameters["centre"]
+        + parameters["radius"]
+        * np.cos(theta)
+    )
+
+    shear_stress_values = (
+        parameters["radius"]
+        * np.sin(theta)
+    )
+
+    return (
+        normal_stress_values,
+        shear_stress_values,
+        parameters,
+    )

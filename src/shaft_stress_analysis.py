@@ -1,36 +1,156 @@
 import numpy as np
-import matplotlib.pyplot as plt
-import os
 
-os.makedirs("images", exist_ok=True)
+from src.validation import validate_positive_number
 
-# Shaft properties
-diameter = float(input("Enter shaft diameter (m): "))
-torque = float(input("Enter applied torque (N·m): "))
 
-# Radius values
-r = np.linspace(0, diameter / 2, 200)
+def calculate_polar_second_moment(diameter):
+    """
+    Calculate the polar second moment of area for a solid circular shaft.
 
-# Polar second moment of area
-J = (np.pi * diameter**4) / 32
+    Parameters
+    ----------
+    diameter : float
+        Shaft diameter in metres.
 
-# Shear stress distribution
-tau = (torque * r) / J
+    Returns
+    -------
+    float
+        Polar second moment of area in m^4.
+    """
+    validate_positive_number(
+        diameter,
+        "diameter",
+    )
 
-# Plot
-plt.figure(figsize=(8, 5))
+    return np.pi * diameter**4 / 32.0
 
-plt.plot(r * 1000, tau / 1e6, linewidth=2)
 
-plt.title("Shear Stress Distribution in a Circular Shaft")
-plt.xlabel("Radius (mm)")
-plt.ylabel("Shear Stress (MPa)")
-plt.grid(True)
+def calculate_torsional_shear_stress(
+    torque,
+    radius,
+    diameter,
+):
+    """
+    Calculate torsional shear stress at a given shaft radius.
 
-plt.savefig("images/shaft_stress_distribution.png", dpi=300)
+    Parameters
+    ----------
+    torque : float
+        Applied torque in N m.
 
-maximum_shear = np.max(tau)
+    radius : float
+        Radial location from the shaft centre in metres.
 
-print(f"Maximum Shear Stress = {maximum_shear / 1e6:.2f} MPa")
+    diameter : float
+        Shaft diameter in metres.
 
-plt.show()
+    Returns
+    -------
+    float
+        Shear stress in Pa.
+    """
+    validate_positive_number(
+        torque,
+        "torque",
+    )
+    validate_positive_number(
+        diameter,
+        "diameter",
+    )
+
+    if radius < 0:
+        raise ValueError(
+            "radius cannot be negative."
+        )
+
+    outer_radius = diameter / 2.0
+
+    if radius > outer_radius:
+        raise ValueError(
+            "radius cannot exceed the shaft outer radius."
+        )
+
+    polar_second_moment = calculate_polar_second_moment(
+        diameter
+    )
+
+    return (
+        torque
+        * radius
+        / polar_second_moment
+    )
+
+
+def calculate_maximum_torsional_shear_stress(
+    torque,
+    diameter,
+):
+    """
+    Calculate maximum shear stress at the shaft outer surface.
+    """
+    validate_positive_number(
+        torque,
+        "torque",
+    )
+    validate_positive_number(
+        diameter,
+        "diameter",
+    )
+
+    outer_radius = diameter / 2.0
+
+    return calculate_torsional_shear_stress(
+        torque=torque,
+        radius=outer_radius,
+        diameter=diameter,
+    )
+
+
+def calculate_shaft_stress_distribution(
+    torque,
+    diameter,
+    number_of_points=200,
+):
+    """
+    Calculate radial shear-stress distribution through a solid shaft.
+
+    Returns
+    -------
+    tuple
+        radius values in metres and shear stress values in Pa.
+    """
+    validate_positive_number(
+        torque,
+        "torque",
+    )
+    validate_positive_number(
+        diameter,
+        "diameter",
+    )
+    validate_positive_number(
+        number_of_points,
+        "number_of_points",
+    )
+
+    if not isinstance(number_of_points, int):
+        raise TypeError(
+            "number_of_points must be an integer."
+        )
+
+    radius_values = np.linspace(
+        0.0,
+        diameter / 2.0,
+        number_of_points,
+    )
+
+    polar_second_moment = calculate_polar_second_moment(
+        diameter
+    )
+
+    stress_values = (
+        torque
+        * radius_values
+        / polar_second_moment
+    )
+
+    return radius_values, stress_values
