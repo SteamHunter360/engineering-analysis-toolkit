@@ -4,6 +4,11 @@ from src.beam_deflection import (
     calculate_beam_deflection_curve,
     calculate_centre_point_load_deflection,
     calculate_maximum_centre_point_load_deflection,
+    calculate_bending_moment_at_position,
+    calculate_centre_point_load_reactions,
+    calculate_maximum_bending_moment,
+    calculate_shear_force_and_bending_moment_curves,
+    calculate_shear_force_at_position,
 )
 
 
@@ -152,3 +157,90 @@ def test_rejects_invalid_number_of_points():
             second_moment_area=8e-6,
             number_of_points=1,
         )
+
+
+def test_centre_point_load_reactions_are_equal():
+    reaction_left, reaction_right = (
+        calculate_centre_point_load_reactions(
+            point_load=1000.0
+        )
+    )
+
+    assert reaction_left == pytest.approx(500.0)
+    assert reaction_right == pytest.approx(500.0)
+
+
+def test_shear_force_changes_sign_across_midspan():
+    left_shear = calculate_shear_force_at_position(
+        position=0.5,
+        beam_length=2.0,
+        point_load=1000.0,
+    )
+
+    right_shear = calculate_shear_force_at_position(
+        position=1.5,
+        beam_length=2.0,
+        point_load=1000.0,
+    )
+
+    assert left_shear == pytest.approx(500.0)
+    assert right_shear == pytest.approx(-500.0)
+
+
+def test_bending_moment_is_zero_at_supports():
+    left_moment = calculate_bending_moment_at_position(
+        position=0.0,
+        beam_length=2.0,
+        point_load=1000.0,
+    )
+
+    right_moment = calculate_bending_moment_at_position(
+        position=2.0,
+        beam_length=2.0,
+        point_load=1000.0,
+    )
+
+    assert left_moment == pytest.approx(0.0)
+    assert right_moment == pytest.approx(0.0)
+
+
+def test_maximum_bending_moment_known_value():
+    maximum_moment = calculate_maximum_bending_moment(
+        beam_length=2.0,
+        point_load=1000.0,
+    )
+
+    assert maximum_moment == pytest.approx(500.0)
+
+
+def test_midspan_bending_moment_matches_maximum():
+    midspan_moment = calculate_bending_moment_at_position(
+        position=1.0,
+        beam_length=2.0,
+        point_load=1000.0,
+    )
+
+    maximum_moment = calculate_maximum_bending_moment(
+        beam_length=2.0,
+        point_load=1000.0,
+    )
+
+    assert midspan_moment == pytest.approx(
+        maximum_moment
+    )
+
+
+def test_force_and_moment_curves_have_matching_lengths():
+    (
+        position_values,
+        shear_force_values,
+        bending_moment_values,
+    ) = calculate_shear_force_and_bending_moment_curves(
+        beam_length=2.0,
+        point_load=1000.0,
+        number_of_points=201,
+    )
+
+    assert len(position_values) == 201
+    assert len(shear_force_values) == 201
+    assert len(bending_moment_values) == 201

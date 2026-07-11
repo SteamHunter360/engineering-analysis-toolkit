@@ -3,6 +3,31 @@ import numpy as np
 from src.validation import validate_positive_number
 
 
+def _validate_position(position, beam_length):
+    if not isinstance(position, (int, float, np.number)):
+        raise TypeError("position must be a real number.")
+
+    if position < 0 or position > beam_length:
+        raise ValueError(
+            "position must lie between 0 and beam_length."
+        )
+
+
+def _validate_number_of_points(
+    number_of_points,
+    minimum_value,
+):
+    if not isinstance(number_of_points, int):
+        raise TypeError(
+            "number_of_points must be an integer."
+        )
+
+    if number_of_points < minimum_value:
+        raise ValueError(
+            f"number_of_points must be at least {minimum_value}."
+        )
+
+
 def calculate_centre_point_load_deflection(
     position,
     beam_length,
@@ -20,16 +45,12 @@ def calculate_centre_point_load_deflection(
     ----------
     position : float
         Position along the beam in metres.
-
     beam_length : float
         Beam span in metres.
-
     point_load : float
         Midspan point load in newtons.
-
     youngs_modulus : float
         Young's modulus in pascals.
-
     second_moment_area : float
         Second moment of area in m^4.
 
@@ -55,15 +76,10 @@ def calculate_centre_point_load_deflection(
         "second_moment_area",
     )
 
-    if not isinstance(position, (int, float, np.number)):
-        raise TypeError(
-            "position must be a real number."
-        )
-
-    if position < 0 or position > beam_length:
-        raise ValueError(
-            "position must lie between 0 and beam_length."
-        )
+    _validate_position(
+        position,
+        beam_length,
+    )
 
     if position <= beam_length / 2.0:
         distance_from_support = position
@@ -137,7 +153,7 @@ def calculate_beam_deflection_curve(
     number_of_points=200,
 ):
     """
-    Generate a complete deflection curve for a simply supported
+    Generate the complete deflection curve for a simply supported
     beam with a centre point load.
 
     Returns
@@ -162,15 +178,10 @@ def calculate_beam_deflection_curve(
         "second_moment_area",
     )
 
-    if not isinstance(number_of_points, int):
-        raise TypeError(
-            "number_of_points must be an integer."
-        )
-
-    if number_of_points < 2:
-        raise ValueError(
-            "number_of_points must be at least 2."
-        )
+    _validate_number_of_points(
+        number_of_points,
+        minimum_value=2,
+    )
 
     position_values = np.linspace(
         0.0,
@@ -191,4 +202,197 @@ def calculate_beam_deflection_curve(
         ]
     )
 
-    return position_values, deflection_values
+    return (
+        position_values,
+        deflection_values,
+    )
+
+
+def calculate_centre_point_load_reactions(
+    point_load,
+):
+    """
+    Calculate support reactions for a simply supported beam
+    carrying a point load at midspan.
+
+    Returns
+    -------
+    tuple
+        Left and right support reactions in newtons.
+    """
+    validate_positive_number(
+        point_load,
+        "point_load",
+    )
+
+    reaction_left = point_load / 2.0
+    reaction_right = point_load / 2.0
+
+    return (
+        reaction_left,
+        reaction_right,
+    )
+
+
+def calculate_shear_force_at_position(
+    position,
+    beam_length,
+    point_load,
+):
+    """
+    Calculate internal shear force for a simply supported beam
+    carrying a centre point load.
+
+    At the exact load position, the function returns 0 N,
+    representing the midpoint of the shear-force discontinuity.
+    """
+    validate_positive_number(
+        beam_length,
+        "beam_length",
+    )
+    validate_positive_number(
+        point_load,
+        "point_load",
+    )
+
+    _validate_position(
+        position,
+        beam_length,
+    )
+
+    reaction_left, _ = (
+        calculate_centre_point_load_reactions(
+            point_load
+        )
+    )
+
+    if position < beam_length / 2.0:
+        return reaction_left
+
+    if position > beam_length / 2.0:
+        return reaction_left - point_load
+
+    return 0.0
+
+
+def calculate_bending_moment_at_position(
+    position,
+    beam_length,
+    point_load,
+):
+    """
+    Calculate bending moment for a simply supported beam
+    carrying a centre point load.
+    """
+    validate_positive_number(
+        beam_length,
+        "beam_length",
+    )
+    validate_positive_number(
+        point_load,
+        "point_load",
+    )
+
+    _validate_position(
+        position,
+        beam_length,
+    )
+
+    reaction_left, reaction_right = (
+        calculate_centre_point_load_reactions(
+            point_load
+        )
+    )
+
+    if position <= beam_length / 2.0:
+        return reaction_left * position
+
+    return reaction_right * (
+        beam_length - position
+    )
+
+
+def calculate_maximum_bending_moment(
+    beam_length,
+    point_load,
+):
+    """
+    Calculate the maximum bending moment at midspan.
+    """
+    validate_positive_number(
+        beam_length,
+        "beam_length",
+    )
+    validate_positive_number(
+        point_load,
+        "point_load",
+    )
+
+    return (
+        point_load
+        * beam_length
+        / 4.0
+    )
+
+
+def calculate_shear_force_and_bending_moment_curves(
+    beam_length,
+    point_load,
+    number_of_points=201,
+):
+    """
+    Generate position, shear-force and bending-moment arrays.
+
+    Returns
+    -------
+    tuple
+        Position values in metres, shear-force values in newtons,
+        and bending-moment values in newton-metres.
+    """
+    validate_positive_number(
+        beam_length,
+        "beam_length",
+    )
+    validate_positive_number(
+        point_load,
+        "point_load",
+    )
+
+    _validate_number_of_points(
+        number_of_points,
+        minimum_value=3,
+    )
+
+    position_values = np.linspace(
+        0.0,
+        beam_length,
+        number_of_points,
+    )
+
+    shear_force_values = np.array(
+        [
+            calculate_shear_force_at_position(
+                position=position,
+                beam_length=beam_length,
+                point_load=point_load,
+            )
+            for position in position_values
+        ]
+    )
+
+    bending_moment_values = np.array(
+        [
+            calculate_bending_moment_at_position(
+                position=position,
+                beam_length=beam_length,
+                point_load=point_load,
+            )
+            for position in position_values
+        ]
+    )
+
+    return (
+        position_values,
+        shear_force_values,
+        bending_moment_values,
+    )
