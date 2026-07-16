@@ -6,8 +6,18 @@ def test_display_menu_runs_without_error(capsys):
 
     captured = capsys.readouterr()
 
-    assert "Engineering Analysis Toolkit" in captured.out
-    assert "Beam Deflection" in captured.out
-    assert "Shaft Torsional Stress" in captured.out
-    assert "Mohr's Circle" in captured.out
-    assert "Euler Buckling" in captured.out
+    expected_items = {
+        "Engineering Analysis Toolkit",
+        "Beam Analysis",
+        "Shaft Torsional Stress",
+        "Mohr's Circle",
+        "Euler Buckling",
+        "Failure Criteria",
+        "Heat Transfer",
+        "Fluid Mechanics",
+        "Thermodynamics",
+        "Exit",
+    }
+
+    for item in expected_items:
+        assert item in captured.out
